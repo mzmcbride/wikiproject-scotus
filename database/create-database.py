@@ -19,11 +19,13 @@ def get_category_members(category):
         'format': 'json',
     }
     request = wikitools.APIRequest(wiki, params)
-    response = request.query(querycontinue=False)
-    members = response['query']['categorymembers']
-    for member in members:
-        category_members.append(member[u'title'])
-    return category_members
+
+    members = list()
+    for result in request.queryGen(): #a generator of all the results
+        for member in result['query']['categorymembers']: #each JSON result has params
+            members.append(member['title']) #Get the title from inside member
+    return members
+        
 
 #Delete the database if it exists
 if os.path.exists(settings.dbname):
@@ -46,10 +48,10 @@ wiki.login(settings.username, settings.password)
 
 # Get the case data
 cases = get_category_members('United States Supreme Court cases')
-print(len(cases)) #TODO: No way this is exactly 500. Investigate
+print("Number of cases:", len(cases)) 
 
-for case_title in cases:
-    print(case_title)
+for i, case_title in enumerate(cases):
+    print("{}/{}".format(i, len(cases)))
     case = wikitools.Page(wiki, case_title)
     case_text = case.getWikiText().decode('utf-8')
     cursor.execute('''
