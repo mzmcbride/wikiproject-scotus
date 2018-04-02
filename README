@@ -1,0 +1,9 @@
+Code for <https://en.wikipedia.org/wiki/Wikipedia:WikiProject_U.S._Supreme_Court_cases>.
+
+Getting started
+===============
+
+You'll need Python 2.7 and virtualenv installed.
+
+* virtualenv venv
+* ./venv/bin/pip install -r requirements.txt
