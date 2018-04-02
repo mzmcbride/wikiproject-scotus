@@ -1,0 +1,6 @@
+reset.txt
+offset.txt
+settings.py
+*.pyc
+scotus-cases.db
+venv/
