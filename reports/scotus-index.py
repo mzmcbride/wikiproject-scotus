@@ -22,8 +22,7 @@ cursor.execute('''
 /* scotus-index.py */
 SELECT
   page_title
-FROM page
-ORDER BY page_title ASC;
+FROM page;
 ''')
 
 results = cursor.fetchall()
