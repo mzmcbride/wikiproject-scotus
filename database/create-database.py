@@ -3,6 +3,7 @@
 
 import sqlite3
 import os
+from datetime import datetime
 
 import wikitools
 
@@ -27,9 +28,12 @@ def get_category_members(category):
     return members
         
 
-#Delete the database if it exists
+#Archive the database if it exists
 if os.path.exists(settings.dbname):
-    os.remove(settings.dbname)
+    print(dir(datetime))
+    archive_name = settings.dbname + ' ' + str(datetime.now())
+    archive_name = archive_name.replace(' ', '_')
+    os.rename(settings.dbname, archive_name)
 
 #Connect to database
 conn = sqlite3.connect(settings.dbname)
