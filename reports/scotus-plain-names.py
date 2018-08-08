@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 # Public domain; MZMcBride; 2012
 
-import re
 import sqlite3
+import re
 
 import wikitools
 
