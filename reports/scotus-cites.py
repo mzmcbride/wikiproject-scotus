@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # Public domain; MZMcBride; 2012
 
+from collections import Counter
 import re
 import sqlite3
 
@@ -12,13 +13,12 @@ params_re = re.compile(r"""
 \s*\|\s*USVol\s*=\s*(\d{1,3})
 \n\s*\|\s*USPage\s*=\s*(\d{1,4}|___)
 """, re.X)
-scite_re = re.compile(r'\{\{scite\|\d{1,3}\|_{3}\|\d{4}\}\}')
 
 report_title = settings.rootpage + 'D'
 report_template = u'''\
-Case citations. Each case listed below has two citations next to it \
-(one "U.S." version and one "US" version) and both should be blue \
-links (working redirects or links to disambiguation pages).
+Case citations. Each case listed below has a citation next to it. \
+This link should be blue, either as a working redirect or as a link to \
+a disambiguation page.
 
 Redirects should ideally use the {{tl|R from case citation}} template \
 with a proper category sort key.
@@ -28,18 +28,24 @@ with a proper category sort key.
 parameters) and the data has not been verified. Be mindful of this \
 before relying on it.
 
-{| class="wikitable plainlinks" style="width:100%%; margin:auto;"
+{| class="wikitable sortable"
 |- style="white-space:nowrap;"
 ! No.
 ! Page
-! Canonical citation
-! Alternate citation
+! data-sort-type="text" | Citation
 %s
 |}
 
 == Anomalies ==
 %s
-'''
+
+== Counts by volume ==
+{| class="wikitable sortable"
+|- style="white-space:nowrap;"
+! Volume
+! Count
+%s
+|}'''
 
 conn = sqlite3.connect(settings.dbname)
 cursor = conn.cursor()
@@ -61,32 +67,48 @@ conn.close()
 i = 1
 output = []
 anomalies = []
+volume_counts_raw = []
 for row in results:
     page_title = row[0]
     page_text = row[1]
     result = params_re.search(page_text)
     if result:
-        if result.group(2) == '___':
-            cite_style_1 = '%s U.S. %s' % (result.group(1),
-                                           result.group(2))
+        us_vol = result.group(1)
+        us_page = result.group(2)
+        volume_counts_raw.append(int(us_vol))
+        if us_page == '___':
+            cite_style = '%s U.S. %s' % (us_vol, us_page)
         else:
-            cite_style_1 = '[[%s U.S. %s]]' % (result.group(1),
-                                               result.group(2))
-        cite_style_2 = cite_style_1.replace('U.S.', 'US')
+            cite_style = '[[%s U.S. %s]]' % (us_vol, us_page)
+        sort_volume = str(format(int(us_vol), '04'))
+        if us_page.isdigit():
+            sort_page = str(format(int(us_page), '04'))
+        else:
+            sort_page = '0000'
+        sort_key = sort_volume + sort_page
         table_row = u"""\
 |-
 | %d
 | ''[[%s]]''
-| %s
-| %s""" % (i, page_title, cite_style_1, cite_style_2)
+| data-sort-value="%s" %s| %s""" % (i, page_title, sort_key, 'class="nowrap" ' if i == 1 else '', cite_style)
         output.append(table_row)
         i += 1
     else:
         anomalies.append("# ''[[%s]]''" % page_title)
 
+volume_counts_counted = Counter(volume_counts_raw)
+volume_counts_sorted = sorted(volume_counts_counted.items())
+volume_counts = []
+for i in volume_counts_sorted:
+    volume_counts.append("""\
+|-
+| [[List of United States Supreme Court cases, volume %s|%s]]
+| %s""" % (i[0], i[0], i[1]))
+
 wiki = wikitools.Wiki(settings.apiurl)
 wiki.login(settings.username, settings.password)
 report = wikitools.Page(wiki, report_title)
 report_text = report_template % ('\n'.join(output),
-                                 '\n'.join(anomalies))
+                                 '\n'.join(anomalies),
+                                 '\n'.join(volume_counts))
 report.edit(report_text, summary=settings.editsumm, bot=1, skipmd5=True)
