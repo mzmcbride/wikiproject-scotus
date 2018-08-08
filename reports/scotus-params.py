@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Public domain; MZMcBride; 2013
 
-import MySQLdb
+import sqlite3
 import wikitools
 
 import settings
@@ -19,10 +19,7 @@ Cases containing a deprecated template parameter.
 |}
 '''
 
-conn = MySQLdb.connect(user=settings.dbuser,
-                       passwd=settings.dbpassword,
-                       host=settings.dbhost,
-                       db=settings.dbname)
+conn = sqlite3.connect(settings.dbname)
 cursor = conn.cursor()
 
 cursor.execute('''
@@ -42,8 +39,8 @@ i = 1
 output = []
 anomalies = []
 for row in results:
-    page_title = row[0].decode('latin-1')
-    page_text = row[1].decode('latin-1')
+    page_title = row[0]
+    page_text = row[1]
     if page_text.find('CitationNew') != -1:
         table_row = u"""\
 |-
