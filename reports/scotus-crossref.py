@@ -24,84 +24,57 @@ params = {
     'action': 'query',
     'list': 'categorymembers',
     'cmtitle': 'Category:United_States_Supreme_Court_cases',
-    'cmlimit': 500,
+    'cmlimit': 5000,
     'cmnamespace': 0,
     'format': 'json'
 }
 request = wikitools.APIRequest(wiki, params)
-for response in request.queryGen():
-    members = response['query']['categorymembers']
-    for member in members:
-        from_cat.add(member[u'title'])
+response = request.query(querycontinue=False)
+members = response['query']['categorymembers']
+for member in members:
+    from_cat.add(member[u'title'])
 
 params = {
     'action': 'query',
     'list': 'embeddedin',
     'eititle': 'Template:WikiProject_U.S._Supreme_Court_cases',
-    'eilimit': 500,
+    'eilimit': 5000,
     'einamespace' : 1,
     'format': 'json'
 }
 request = wikitools.APIRequest(wiki, params)
-for response in request.queryGen():
-    transclusions = response['query']['embeddedin']
-    for transclusion in transclusions:
-        from_talk_page.add(transclusion[u'title'].split(':', 1)[1])
+response = request.query(querycontinue=False)
+transclusions = response['query']['embeddedin']
+for transclusion in transclusions:
+    from_talk_page.add(transclusion[u'title'].split(':', 1)[1])
 
 params = {
     'action': 'query',
     'list': 'embeddedin',
     'eititle': 'Template:Infobox_SCOTUS_case',
-    'eilimit': 500,
+    'eilimit': 5000,
     'einamespace' : 0,
     'format': 'json'
 }
 request = wikitools.APIRequest(wiki, params)
-for response in request.queryGen():
-    transclusions = response['query']['embeddedin']
-    for transclusion in transclusions:
-        from_infobox.add(transclusion[u'title'])
+response = request.query(querycontinue=False)
+transclusions = response['query']['embeddedin']
+for transclusion in transclusions:
+    from_infobox.add(transclusion[u'title'])
 
 params = {
     'action': 'query',
     'list': 'embeddedin',
     'eititle': 'Template:SCOTUS-stub',
-    'eilimit': 500,
+    'eilimit': 5000,
     'einamespace' : 0,
     'format': 'json'
 }
 request = wikitools.APIRequest(wiki, params)
-for response in request.queryGen():
-    transclusions = response['query']['embeddedin']
-    for transclusion in transclusions:
-        from_stub.add(transclusion[u'title'])
-
-params = {
-    'action': 'query',
-    'list': 'categorymembers',
-    'cmtitle': 'Category:United_States_Supreme_Court_cases_by_court',
-    'cmlimit': 50,
-    'cmnamespace': 14,
-    'format': 'json'
-}
-request = wikitools.APIRequest(wiki, params)
-for response in request.queryGen():
-    members = response['query']['categorymembers']
-    for member in members:
-        if u'of the' in member[u'title']:
-            params = {
-                'action': 'query',
-                'list': 'categorymembers',
-                'cmtitle': member[u'title'],
-                'cmlimit': 500,
-                'cmnamespace': 0,
-                'format': 'json'
-            }
-            request = wikitools.APIRequest(wiki, params)
-            for response in request.queryGen():
-                members = response['query']['categorymembers']
-                for member in members:
-                    from_court_cat.add(member[u'title'])
+response = request.query(querycontinue=False)
+transclusions = response['query']['embeddedin']
+for transclusion in transclusions:
+    from_stub.add(transclusion[u'title'])
 
 output = []
 output.append('''\
@@ -132,15 +105,6 @@ for i in (from_infobox - from_talk_page):
 output.append('\n== Stub template; article not categorized ==')
 
 for i in (from_stub - from_cat):
-    output.append(format_line(i))
-
-output.append(
-    '\n== Article categorized in master category; '
-    'not categorized in court category ==\n'
-    '[[:Category:United States Supreme Court cases by court]]'
-)
-
-for i in (from_cat - from_court_cat):
     output.append(format_line(i))
 
 output.append(
