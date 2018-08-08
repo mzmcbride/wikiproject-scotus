@@ -45,6 +45,7 @@ def get_title_from(site, us_vol, us_page):
                                                                           us_page)
     response = urllib.urlopen(url).read()
     soup = BeautifulSoup.BeautifulSoup(response)
+    print(url)
     title = soup.html.head.title.string
     #title = title.replace(' | OpenJurist', '')
     if title:
@@ -75,21 +76,6 @@ conn.close()
 wiki = wikitools.Wiki(settings.apiurl)
 wiki.login(settings.username, settings.password)
 
-all_case_citation_redirects= []
-params = {
-    'action': 'query',
-    'list': 'categorymembers',
-    'cmtitle': 'Category:Redirects from case citations',
-    'cmlimit': 500,
-    'cmnamespace': 0,
-    'format': 'json'
-}
-request = wikitools.APIRequest(wiki, params)
-for response in request.queryGen():
-    members = response['query']['categorymembers']
-    for member in members:
-        all_case_citation_redirects.append(member[u'title'])
-
 f = open('offset.txt', 'w')
 i = 0
 for row in results:
@@ -98,27 +84,26 @@ for row in results:
     page_text = row[1]
     result = params_re.search(page_text)
     if result:
+        print '=' * 80
         us_vol = result.group(1)
         us_page = result.group(2)
         citation = us_vol + ' U.S. ' + us_page
-        if citation.decode('utf-8') in all_case_citation_redirects:
-            continue
-        if int(us_vol) > 567:
-            continue
+        cite_redirect = wikitools.Page(wiki, citation, followRedir=False)
+        if fast:
+            if cite_redirect.exists:
+                continue
         print '=' * 80
         sort_key = us_vol.zfill(4) + ' U.S. ' + us_page.zfill(4)
         print page_title + '  |  ' + citation
+        if int(us_vol) > 564:
+            continue
         #print get_title_from('open_jurist', us_vol, us_page)
         print get_title_from('justia', us_vol, us_page)
         print get_title_from('findlaw', us_vol, us_page)
         redirect = '''#REDIRECT [[%s]]
 
-{{Redirect category shell|
-{{R from case citation|%s}}
-{{R unprintworthy}}
-}}''' % (page_title, sort_key)
+{{Redr|from case citation|p1=%s|unprintworthy}}''' % (page_title, sort_key)
         print 'Proposed: ' + redirect
-        cite_redirect = wikitools.Page(wiki, citation, followRedir=False)
         try:
             cite_redirect_text = cite_redirect.getWikiText().decode('utf-8')
             print 'Current:  ' + cite_redirect_text
@@ -128,14 +113,12 @@ for row in results:
         #print(repr(redirect))
         if cite_redirect_text:
             cite_redirect_text = cite_redirect_text.replace(']] \n\n', ']]\n\n')
-        if not cite_redirect_text:
-            print 'Page does not exist (yet)!'
-        else:
-            continue
         if cite_redirect_text == redirect:
             print 'Identical (or really close)!'
             if fast:
                 continue
+        elif not cite_redirect_text:
+            print 'Page does not exist (yet)!'
         print 'Okay to edit?'
         if cite_redirect_text:
             editsumm = 'categorized'
