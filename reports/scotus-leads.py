@@ -8,7 +8,7 @@ import wikitools
 
 import settings
 
-lead_re = re.compile("""'''''.+''''', """)
+lead_re = re.compile(r"'''''.+?''''', \d{1,3} U\.S\. (\d{1,4}|___) \(\d{4}\), ")
 
 report_title = settings.rootpage + 'B'
 report_template = u'''\
@@ -69,7 +69,7 @@ for row in results:
         table_row = u"""\
 |-
 | %d
-| ''[[%s]]''""" % (j, page_title)
+| ''[[%s]]'' ({{edit|1=%s}})""" % (j, page_title, page_title)
         bad_cases.append(table_row)
         j += 1
 
@@ -80,4 +80,4 @@ report_text = report_template % (len(bad_cases),
                                  '\n'.join(bad_cases),
                                  len(good_cases),
                                  '\n'.join(good_cases))
-report.edit(report_text.encode('utf-8'), summary=settings.editsumm, bot=1)
+report.edit(report_text, summary=settings.editsumm, bot=1, skipmd5=True)
