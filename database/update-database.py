@@ -70,7 +70,7 @@ for stored_title, stored_hash in stored_hashes.iteritems():
     if stored_hash not in case_hashes.values():
         cursor.execute('''
         DELETE FROM page WHERE page_title = ?;
-        ''' , (stored_title, ))
+        ''' , (stored_title.decode('utf-8'), ))
         conn.commit()
 
 cursor.close()
