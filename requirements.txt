@@ -1,2 +1,2 @@
-wikitools
+git+ssh://git@github.com/alexz-enwp/wikitools.git
 BeautifulSoup
